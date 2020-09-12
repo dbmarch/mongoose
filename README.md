@@ -10,6 +10,11 @@ Mongoose makes embedded network programming fast, robust, and easy.
 
 - [Download Mongoose Source Code here](https://www.cesanta.com/download.html)
 
+Connectivity is vital for software and embedded devices, but there are many pitfalls to consider when embedding a web server. 
+This white paper breaks down on the top 9 things to avoid when embedding a web server.
+
+- [Download “9 Things NOT to do when embedding a web server” white paper here](https://www.cesanta.com/whitepaper.html)
+
 Looking for a complete IoT firmware solution?
 
 Check out [Mongoose OS](https://mongoose-os.com) - open source embedded operating system for low-power connected microcontrollers. Secure, designed for Internet of Things, complete environment for prototyping, development and managing.
@@ -61,8 +66,11 @@ the functionality:
 
 # Contributions
 
-To submit contributions, sign [Cesanta CLA](https://cesanta.com/cla.html)
-and send GitHub pull request.
+Contributions are welcome! Please follow the guidelines below:
+
+- Sign [Cesanta CLA](https://cesanta.com/cla.html) and send GitHub pull request
+- When making pull requests, please make sure that it has only one commit,
+ and imlements/fixes only one piece of functionality
 
 # Looking for a pre-compiled Mongoose web server Windows or Mac binary?
 - [Download pre-compiled Mongoose web server binary.](https://www.cesanta.com/binary.html)

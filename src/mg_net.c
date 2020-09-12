@@ -1,20 +1,3 @@
-/*
- * Copyright (c) 2014 Cesanta Software Limited
- * All rights reserved
- *
- * This software is dual-licensed: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. For the terms of this
- * license, see <http://www.gnu.org/licenses/>.
- *
- * You are free to use this software under the terms of the GNU General
- * Public License, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * Alternatively, you can license this software under a commercial
- * license, as set out in <https://www.cesanta.com/license>.
- */
 
 #include "common/cs_time.h"
 #include "mg_dns.h"
@@ -540,7 +523,7 @@ struct mg_connection *mg_if_accept_new_conn(struct mg_connection *lc) {
   nc->iface = lc->iface;
   if (lc->flags & MG_F_SSL) nc->flags |= MG_F_SSL;
   mg_add_conn(nc->mgr, nc);
-  LOG(LL_DEBUG, ("%p %p %d %d", lc, nc, nc->sock, (int) nc->flags));
+  LOG(LL_DEBUG, ("%p %p %d %#x", lc, nc, (int) nc->sock, (int) nc->flags));
   return nc;
 }
 
@@ -707,13 +690,13 @@ static int mg_recv_udp(struct mg_connection *nc, char *buf, size_t len) {
     } else {
       mbuf_append(&nc->recv_mbuf, buf, n);
     }
-    mbuf_trim(&lc->recv_mbuf);
     lc->last_io_time = nc->last_io_time = (time_t) mg_time();
 #if !defined(NO_LIBC) && MG_ENABLE_HEXDUMP
     if (nc->mgr && nc->mgr->hexdump_file != NULL) {
       mg_hexdump_connection(nc, nc->mgr->hexdump_file, buf, n, MG_EV_RECV);
     }
 #endif
+    mbuf_trim(&lc->recv_mbuf);
     if (n != 0) {
       mg_call(nc, NULL, nc->user_data, MG_EV_RECV, &n);
     }

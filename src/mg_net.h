@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2014 Cesanta Software Limited
- * All rights reserved
- * This software is dual-licensed: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. For the terms of this
- * license, see <http://www.gnu.org/licenses/>.
- *
- * You are free to use this software under the terms of the GNU General
- * Public License, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * Alternatively, you can license this software under a commercial
- * license, as set out in <https://www.cesanta.com/license>.
- */
 
 /*
  * === Core API: TCP/UDP/SSL
@@ -110,9 +94,6 @@ struct mg_connection {
   struct mbuf send_mbuf;   /* Data scheduled for sending */
   time_t last_io_time;     /* Timestamp of the last socket IO */
   double ev_timer_time;    /* Timestamp of the future MG_EV_TIMER */
-#if MG_ENABLE_SSL
-  void *ssl_if_data; /* SSL library data. */
-#endif
   mg_event_handler_t proto_handler; /* Protocol-specific event handler */
   void *proto_data;                 /* Protocol-specific data */
   void (*proto_data_destructor)(void *proto_data);
@@ -145,16 +126,25 @@ struct mg_connection {
 /* Flags that are settable by user */
 #define MG_F_SEND_AND_CLOSE (1 << 10)      /* Push remaining data and close  */
 #define MG_F_CLOSE_IMMEDIATELY (1 << 11)   /* Disconnect */
-#define MG_F_WEBSOCKET_NO_DEFRAG (1 << 12) /* Websocket specific */
-#define MG_F_DELETE_CHUNK (1 << 13)        /* HTTP specific */
+
+/* Flags for protocol handlers */
+#define MG_F_PROTO_1 (1 << 12)
+#define MG_F_PROTO_2 (1 << 13)
 #define MG_F_ENABLE_BROADCAST (1 << 14)    /* Allow broadcast address usage */
 
-#define MG_F_USER_1 (1 << 20) /* Flags left for application */
+/* Flags left for application */
+#define MG_F_USER_1 (1 << 20)
 #define MG_F_USER_2 (1 << 21)
 #define MG_F_USER_3 (1 << 22)
 #define MG_F_USER_4 (1 << 23)
 #define MG_F_USER_5 (1 << 24)
 #define MG_F_USER_6 (1 << 25)
+
+#if MG_ENABLE_SSL
+  void *ssl_if_data; /* SSL library data. */
+#else
+  void *unused_ssl_if_data; /* To keep the size of the structure the same. */
+#endif
 };
 
 /*

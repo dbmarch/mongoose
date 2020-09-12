@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2014 Cesanta Software Limited
- * All rights reserved
- */
 
 /*
  * === Common API reference
@@ -12,8 +8,8 @@
 
 #if MG_ENABLE_HTTP
 
-#include "mg_net.h"
 #include "common/mg_str.h"
+#include "mg_net.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +58,15 @@ struct http_message {
   /* Headers */
   struct mg_str header_names[MG_MAX_HTTP_HEADERS];
   struct mg_str header_values[MG_MAX_HTTP_HEADERS];
+
+  /*
+   * Value of the Content-Length header if present,
+   * otherwise MG_HTTP_CONTENT_LENGTH_UNKNOWN.
+   */
+  size_t content_length;
 };
+
+#define MG_HTTP_CONTENT_LENGTH_UNKNOWN ((size_t) -1)
 
 #if MG_ENABLE_HTTP_WEBSOCKET
 /* WebSocket message */
@@ -119,6 +123,9 @@ struct mg_ssi_call_ctx {
 /* struct mg_http_multipart_part */
 #define MG_EV_HTTP_MULTIPART_REQUEST_END 125
 #endif
+
+#define MG_F_WEBSOCKET_NO_DEFRAG MG_F_PROTO_1
+#define MG_F_DELETE_CHUNK MG_F_PROTO_2
 
 /*
  * Attaches a built-in HTTP event handler to the given connection.

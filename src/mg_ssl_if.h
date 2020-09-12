@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2014-2016 Cesanta Software Limited
- * All rights reserved
- */
 
 #ifndef CS_MONGOOSE_SRC_SSL_IF_H_
 #define CS_MONGOOSE_SRC_SSL_IF_H_
@@ -15,7 +11,7 @@ extern "C" {
 struct mg_ssl_if_ctx;
 struct mg_connection;
 
-void mg_ssl_if_init();
+void mg_ssl_if_init(void);
 
 enum mg_ssl_if_result {
   MG_SSL_OK = 0,

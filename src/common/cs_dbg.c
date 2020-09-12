@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2014-2018 Cesanta Software Limited
- * All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the ""License"");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an ""AS IS"" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 #include "common/cs_dbg.h"
 
@@ -43,6 +27,15 @@ double cs_log_ts WEAK;
 #endif
 
 enum cs_log_level cs_log_cur_msg_level WEAK = LL_NONE;
+
+/* In implementations that require locking, these can be overridden. */
+void cs_log_lock(void) WEAK;
+void cs_log_lock(void) {
+}
+
+void cs_log_unlock(void) WEAK;
+void cs_log_unlock(void) {
+}
 
 void cs_log_set_file_level(const char *file_level) {
   char *fl = s_file_level;
@@ -97,6 +90,7 @@ int cs_log_print_prefix(enum cs_log_level level, const char *file, int ln) {
     if (level > pll) return 0;
   }
 
+  cs_log_lock();
   if (cs_log_file == NULL) cs_log_file = stderr;
   cs_log_cur_msg_level = level;
   fwrite(prefix, 1, sizeof(prefix), cs_log_file);
@@ -119,6 +113,7 @@ void cs_log_printf(const char *fmt, ...) {
   fputc('\n', cs_log_file);
   fflush(cs_log_file);
   cs_log_cur_msg_level = LL_NONE;
+  cs_log_unlock();
 }
 
 void cs_log_set_file(FILE *file) WEAK;

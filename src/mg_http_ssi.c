@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2014-2016 Cesanta Software Limited
- * All rights reserved
- */
 
 #if MG_ENABLE_HTTP && MG_ENABLE_HTTP_SSI && MG_ENABLE_FILESYSTEM
 
@@ -29,13 +25,15 @@ static void mg_do_ssi_include(struct mg_connection *nc, struct http_message *hm,
    */
   if (sscanf(tag, " virtual=\"%[^\"]\"", file_name) == 1) {
     /* File name is relative to the webserver root */
-    snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
+    if (snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name) < 0) {
+      return;
+    }
   } else if (sscanf(tag, " abspath=\"%[^\"]\"", file_name) == 1) {
     /*
      * File name is relative to the webserver working directory
      * or it is absolute system path
      */
-    snprintf(path, sizeof(path), "%s", file_name);
+    if (snprintf(path, sizeof(path), "%s", file_name) < 0) return;
   } else if (sscanf(tag, " file=\"%[^\"]\"", file_name) == 1 ||
              sscanf(tag, " \"%[^\"]\"", file_name) == 1) {
     /* File name is relative to the currect document */
@@ -170,7 +168,7 @@ MG_INTERNAL void mg_handle_ssi_request(struct mg_connection *nc,
                                        const char *path,
                                        const struct mg_serve_http_opts *opts) {
   FILE *fp;
-  struct mg_str mime_type;
+  struct mg_str mime_type = MG_NULL_STR, encoding = MG_NULL_STR;
   DBG(("%p %s", nc, path));
 
   if ((fp = mg_fopen(path, "rb")) == NULL) {
@@ -178,12 +176,20 @@ MG_INTERNAL void mg_handle_ssi_request(struct mg_connection *nc,
   } else {
     mg_set_close_on_exec((sock_t) fileno(fp));
 
-    mime_type = mg_get_mime_type(path, "text/plain", opts);
+    if (!mg_get_mime_type_encoding(mg_mk_str(path), &mime_type, &encoding,
+                                   opts)) {
+      mime_type = mg_mk_str("text/plain");
+    }
     mg_send_response_line(nc, 200, opts->extra_headers);
     mg_printf(nc,
               "Content-Type: %.*s\r\n"
-              "Connection: close\r\n\r\n",
+              "Connection: close\r\n",
               (int) mime_type.len, mime_type.p);
+    if (encoding.len > 0) {
+      mg_printf(nc, "Content-Encoding: %.*s\r\n", (int) encoding.len,
+                encoding.p);
+    }
+    mg_send(nc, "\r\n", 2);
     mg_send_ssi_file(nc, hm, path, fp, 0, opts);
     fclose(fp);
     nc->flags |= MG_F_SEND_AND_CLOSE;

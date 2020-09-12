@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Generate a reversible amalgamation of several C source files
 # along with their required internal headers.
@@ -32,10 +32,10 @@
 #
 
 import argparse
+import io
 import re
 import sys
 import os
-from StringIO import StringIO
 
 parser = argparse.ArgumentParser(description='Produce an amalgamated source')
 parser.add_argument('--prefix', default="NS",
@@ -59,16 +59,17 @@ parser.add_argument('--exportable-headers', dest="export", action='store_true',
                     help='allow exporting internal headers')
 parser.add_argument('-I', default=['.'], dest='include_path', help='include path', action='append')
 parser.add_argument('sources', nargs='*', help='sources')
+parser.add_argument('--license', dest="license", help='License file')
 
 class File(object):
     def __init__(self, name, parent_name):
         self.name = name
         self.parent_name = parent_name
-        self.buf = StringIO()
+        self.buf = io.StringIO()
         emit_file(self.buf, self.name, self.parent_name)
 
     def emit(self):
-        print self.buf.getvalue(),
+        print('%s' % self.buf.getvalue(), end='')
 
 
 args = parser.parse_args()
@@ -103,25 +104,44 @@ def resolve(path, parent_name):
                 break
     if os.path.exists(p) and not args.norel:
         p = os.path.realpath(p).replace('%s%s' % (os.getcwd(), os.sep), '')
-    # print >>sys.stderr, '%s %s -> %s (cwd %s)' % (path, parent_name, p, os.getcwd())
     return p.replace(os.sep, '/')
 
 def emit_line_directive(out, name, parent_name):
-    print >>out, '''#ifdef %(prefix)s_MODULE_LINES
+    print ('''#ifdef %(prefix)s_MODULE_LINES
 #line 1 "%(name)s"
 #endif''' % dict(
     prefix = args.prefix,
     name = resolve(name, parent_name),
-)
+), file=out)
 
 def emit_body(out, name, parent_name):
     resolved_name = resolve(name, parent_name)
     if not args.strict and not os.path.exists(resolved_name):
-        print >>out, '#include "%s"' % (name,)
+        print('#include "%s"' % name, file=out)
         return
 
     with open(resolved_name) as f:
+        leading_spaces = True
+        in_comment = False
+        comment = ''
         for l in f:
+            if leading_spaces:
+                if not l.strip():
+                    continue
+                leading_spaces = False
+            if in_comment:
+                comment += l
+                if re.match('\s*\*/$', l):
+                    in_comment = False
+                    if not re.match('.*Copyright.*Cesanta', comment, re.M | re.S):
+                        out.write(comment)
+                continue
+
+            if re.match('/\*$', l):
+                in_comment = True
+                comment = l
+                continue
+
             match = re.match('( *#include "(.*)")', l)
             if match:
                 all, path_to_include = match.groups()
@@ -129,9 +149,9 @@ def emit_body(out, name, parent_name):
                     if not should_ignore(path_to_include, parent_name):
                         already_included.add(path_to_include)
                         includes.append(File(path_to_include, resolved_name))
-                print >>out, '/* Amalgamated: %s */' % (all,)
+                print('/* Amalgamated: %s */' % all, file=out)
             else:
-                print >>out, l,
+                out.write(l)
 
 
 def emit_file(out, name, parent_name):
@@ -155,15 +175,23 @@ if sys.platform == "win32":
     import os, msvcrt
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
+
+if args.license:
+    print('/*')
+    for l in open(args.license):
+        print((' * %s' % l.rstrip()).rstrip())
+    print(' */')
+    print('')
+
 if args.public:
-    print '#include "%s"' % (args.public)
+    print('#include "%s"' % args.public)
 
 for i in includes:
     i.emit()
 
 if args.export:
-    print '#ifndef %s_EXPORT_INTERNAL_HEADERS' % (args.prefix,)
+    print('#ifndef %s_EXPORT_INTERNAL_HEADERS' % (args.prefix,))
 for i in sources:
     i.emit()
 if args.export:
-    print '#endif /* %s_EXPORT_INTERNAL_HEADERS */' % (args.prefix,)
+    print('#endif /* %s_EXPORT_INTERNAL_HEADERS */' % (args.prefix,))
